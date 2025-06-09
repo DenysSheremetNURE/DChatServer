@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane fx:id="mainAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1200.0" style="-fx-background-color: linear-gradient(from 0% 0% to 100% 100%,   #14213d,        #1b263b,        #25364c); -fx-border-color: #031d3d; -fx-border-width: 2px; -fx-border-style: solid;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.dchatserverview.ServerAppController">
+      <BorderPane layoutX="458.0" layoutY="306.0" prefHeight="189.0" prefWidth="206.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <left>
+                  <ListView fx:id="logListView" nodeOrientation="LEFT_TO_RIGHT" pickOnBounds="false" prefHeight="796.0" prefWidth="752.0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0" />
+         </left>
+         <center>
+            <BorderPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+               <bottom>
+                  <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+               </bottom>
+               <center>
+                  <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+               </center>
+               <top>
+                  <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                  <children>
+                     <Label alignment="CENTER" text="Users connected:" textFill="#11ff00">
+                        <font>
+                           <Font name="Cascadia Mono Regular" size="18.0" />
+                        </font>
+                     </Label>
+                     <Label fx:id="usersCountLabel" text="0" textFill="WHITE">
+                        <font>
+                           <Font name="Droid Sans Mono" size="18.0" />
+                        </font>
+                     </Label>
+                  </children></HBox>
+               </top>
+            </BorderPane>
+         </center>
+      </BorderPane>
+</AnchorPane>
