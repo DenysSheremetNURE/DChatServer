@@ -6,14 +6,16 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.AnchorPane;
 
+import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ServerAppController {
 
     @FXML
     private Label usersCountLabel;
-    //TODO
-    public static int usersCount = 0;
 
     @FXML
     private ListView<Label> logListView;
@@ -22,6 +24,8 @@ public class ServerAppController {
         LogService.bind(logListView);
 
         List<String> logs = LogDB.loadRecentLogs(100);
+        System.out.println("Loaded logs from DB: " + logs.size());
+
         for(String log : logs){
             LogService.loadToUI(log);
         }
@@ -29,7 +33,4 @@ public class ServerAppController {
         LogService.log("SERVER", "RUNNING...");
     }
 
-    public static void addUser(){
-
-    }
 }

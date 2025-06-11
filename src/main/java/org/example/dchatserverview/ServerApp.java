@@ -8,6 +8,9 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class ServerApp extends Application {
+
+    private ServerLogic server;
+
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ServerApp.class.getResource("server.fxml"));
@@ -16,11 +19,17 @@ public class ServerApp extends Application {
         stage.setScene(scene);
         stage.show();
 
+        stage.setOnCloseRequest(event -> {
+            if (server != null) {
+                server.shutdownServer();
+            }
+        });
+
         final int port = 8080;
 
         new Thread(()->{
             try {
-                ServerLogic server = new ServerLogic(port);
+                server = new ServerLogic(port);
                 server.start();
             } catch (Exception e){
                 System.err.println("Server start error: " + e.getMessage());

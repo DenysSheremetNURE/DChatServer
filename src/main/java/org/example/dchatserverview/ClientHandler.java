@@ -3,10 +3,8 @@ package org.example.dchatserverview;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.dchatserverview.JSON.BaseRequest;
-import org.example.dchatserverview.JSON.LoginRequest;
-import org.example.dchatserverview.JSON.LogoutRequest;
-import org.example.dchatserverview.JSON.ServerLoginResponce;
+import org.example.dchatserverview.JSON.*;
+import org.example.dchatserverview.SessionData.UserCountController;
 
 import java.io.*;
 import java.net.Socket;
@@ -47,13 +45,13 @@ public class ClientHandler implements Runnable {
                     case "LOGIN" -> handleLogin(message, mapper); //we pass mapper cause it is too heavy to be created once more
                     case "REGISTER" -> handleRegister(message, mapper);
                     case "LOGOUT" -> handleLogout(message, mapper);
+                    case "DISCONNECT" -> handleDisconnect(message, mapper);
                 }
 
                 //TODO handle the message + add to users online
-
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println("Socket has been closed.");
         } finally {
             try{
                 in.close();
@@ -108,12 +106,44 @@ public class ClientHandler implements Runnable {
     private void handleLogout(String message, ObjectMapper mapper){
         try{
             LogoutRequest logout = mapper.readValue(message, LogoutRequest.class);
-
-            LogService.log(logout.command, "user " + logout.user + " has logged out");
-            //TODO decrease list of connected
+            if (logout.command.equals("LOGOUT")){
+                if(UserCountController.isUser(clientSocket)){
+                    UserCountController.deleteUser(clientSocket);
+                }
+            }
+            LogService.log("LOGIN", "user " + logout.user + " has logged in");
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                in.close();
+                out.close();
+                clientSocket.close();
+
+                UserCountController.deleteUser(clientSocket);
+            } catch (IOException e) {
+                System.err.println("Closing client error: " + e.getMessage());
+            }
         }
 
+    }
+
+    private void handleDisconnect(String message, ObjectMapper mapper){
+        try {
+            DisconnectRequest disconnect = mapper.readValue(message, DisconnectRequest.class);
+
+            LogService.log("DISCONNECT", disconnect.client + " has logged out.");
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                in.close();
+                out.close();
+                clientSocket.close();
+
+            } catch (IOException e) {
+                System.err.println("Closing client error: " + e.getMessage());
+            }
+        }
     }
 }

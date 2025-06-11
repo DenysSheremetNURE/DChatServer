@@ -13,5 +13,6 @@ module org.example.dchatserverview {
     requires java.sql;
 
     opens org.example.dchatserverview to javafx.fxml;
+    opens org.example.dchatserverview.JSON to com.fasterxml.jackson.databind;
     exports org.example.dchatserverview;
 }

@@ -20,7 +20,7 @@ public class LogService {
 
         String color;
         switch (type) {
-            case "ERROR" -> color = "red";
+            case "ERROR", "LOGOUT" -> color = "red";
             case "WARN" -> color = "orange";
             case "SERVER" -> color = "grey";
             default -> color = "green";
