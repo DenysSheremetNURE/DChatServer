@@ -14,6 +14,15 @@ import java.util.Set;
 
 public class ServerAppController {
 
+    //singleton to call funcs in other classes
+    private static ServerAppController instance;
+
+    public ServerAppController(){instance = this;}
+
+    public static ServerAppController getInstance(){
+        return instance;
+    }
+
     @FXML
     private Label usersCountLabel;
 
@@ -31,6 +40,22 @@ public class ServerAppController {
         }
 
         LogService.log("SERVER", "RUNNING...");
+    }
+
+    public void addUserToUserCount() {
+        Platform.runLater(() -> {
+            int count = Integer.parseInt(usersCountLabel.getText());
+            usersCountLabel.setText(String.valueOf(count + 1));
+        });
+    }
+
+    public void removeUserFromUserCount(){
+        Platform.runLater(() -> {
+            int count = Integer.parseInt(usersCountLabel.getText());
+            if (count > 0) {
+                usersCountLabel.setText(String.valueOf(count - 1));
+            }
+        });
     }
 
 }

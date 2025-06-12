@@ -1,12 +1,12 @@
 package org.example.dchatserverview.JSON;
 
-public class ServerLoginResponce {
+public class ServerLoginResponse {
     public String status;
     public String message;
 
-    public ServerLoginResponce(){}
+    public ServerLoginResponse(){}
 
-    public ServerLoginResponce(String status, String message){
+    public ServerLoginResponse(String status, String message){
         this.status = status;
         this.message = message;
     }

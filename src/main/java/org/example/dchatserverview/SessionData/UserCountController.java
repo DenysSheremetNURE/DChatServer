@@ -11,10 +11,6 @@ public class UserCountController {
 
     public static Map<Socket, String> usersCount = new HashMap<>();
 
-    public static void addUser(Socket socket){
-        usersCount.put(socket, null);
-    }
-
     public static void addUsername(Socket socket, String username){
         usersCount.put(socket, username);
     }

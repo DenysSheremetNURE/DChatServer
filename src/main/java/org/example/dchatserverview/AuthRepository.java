@@ -40,4 +40,21 @@ public class AuthRepository {
             throw new RuntimeException(e);
         }
     }
+
+    public void registerUser(String username, String password){
+        String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+
+        try(Connection conn = MainDBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)){
+
+                String hashed = HashUtil.sha256(password);
+
+                stmt.setString(1, username);
+                stmt.setString(2, hashed);
+                stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error registering user", e);
+        }
+    }
 }

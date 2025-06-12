@@ -1,8 +1,8 @@
 package org.example.dchatserverview;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javafx.application.Platform;
 import org.example.dchatserverview.JSON.*;
 import org.example.dchatserverview.SessionData.UserCountController;
 
@@ -85,22 +85,83 @@ public class ClientHandler implements Runnable {
             AuthRepository repository = new AuthRepository();
             boolean isOK = repository.checkCredentials(login.username, login.password);
 
-            ServerLoginResponce response = new ServerLoginResponce();
-            response.status = isOK ? "OK" : "ERROR";
-            response.message = isOK ? "Login successful" : "Wrong credentials";
+            ServerLoginResponse response = new ServerLoginResponse();
 
-            if(isOK) LogService.log("LOGIN", "user " + login.username + " has logged in");
+            if(isOK){
+                response.status = "OK";
+                response.message = "Login successful";
+                UserCountController.addUsername(clientSocket, login.username);
+                LogService.log("LOGIN", "user " + login.username + " has logged in");
+
+                Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
+
+            } else {
+                response.status = "ERROR";
+                response.message = "Wrong credentials";
+            }
 
             String json = mapper.writeValueAsString(response);
             sendMessage(json);
 
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            try{
+                ServerLoginResponse errorResponse = new ServerLoginResponse();
+                errorResponse.status = "ERROR";
+                errorResponse.message = "Internal server error occurred while logging in";
+
+                String json = mapper.writeValueAsString(errorResponse);
+                sendMessage(json);
+            } catch (JsonProcessingException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
     private void handleRegister(String message, ObjectMapper mapper){
+        try{
+            RegisterRequest register = mapper.readValue(message, RegisterRequest.class);
+            AuthRepository repository = new AuthRepository();
 
+            boolean isAlreadyRegistered = repository.checkIfAlreadyExists(register.username);
+
+            ServerRegisterResponse response = new ServerRegisterResponse();
+
+            if(isAlreadyRegistered) {
+                response.status = "ERROR";
+                response.message = "This login is already in use, try login or another username.";
+            } else {
+                repository.registerUser(register.username, register.password);
+
+                response.status = "OK";
+                response.message = "Successfully registered user " + register.username;
+
+                UserCountController.addUsername(clientSocket, register.username);
+
+                Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
+
+                LogService.log("REGISTER", "user " + register.username + " has registered");
+            }
+
+            String json = mapper.writeValueAsString(response);
+            sendMessage(json);
+
+        }  catch (Exception e){
+            e.printStackTrace();
+
+            try{
+                ServerRegisterResponse errorResponse = new ServerRegisterResponse();
+                errorResponse.status = "ERROR";
+                errorResponse.message = "Internal server error occurred during registration";
+
+                String json = mapper.writeValueAsString(errorResponse);
+                sendMessage(json);
+            } catch (JsonProcessingException ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     private void handleLogout(String message, ObjectMapper mapper){
@@ -109,6 +170,8 @@ public class ClientHandler implements Runnable {
             if (logout.command.equals("LOGOUT")){
                 if(UserCountController.isUser(clientSocket)){
                     UserCountController.deleteUser(clientSocket);
+
+                    Platform.runLater(() -> ServerAppController.getInstance().removeUserFromUserCount());
                 }
             }
             LogService.log("LOGIN", "user " + logout.user + " has logged in");
@@ -133,6 +196,7 @@ public class ClientHandler implements Runnable {
             DisconnectRequest disconnect = mapper.readValue(message, DisconnectRequest.class);
 
             LogService.log("DISCONNECT", disconnect.client + " has logged out.");
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         } finally {

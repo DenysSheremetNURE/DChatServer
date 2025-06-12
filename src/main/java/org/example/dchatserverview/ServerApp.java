@@ -3,6 +3,7 @@ package org.example.dchatserverview;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -15,6 +16,8 @@ public class ServerApp extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(ServerApp.class.getResource("server.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 1200, 800);
+
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/org/example/dchatserverview/img/Icon-Server.png")));
         stage.setTitle("DChat server");
         stage.setScene(scene);
         stage.show();
