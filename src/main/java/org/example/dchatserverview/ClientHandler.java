@@ -167,14 +167,6 @@ public class ClientHandler implements Runnable {
     private void handleLogout(String message, ObjectMapper mapper){
         try{
             LogoutRequest logout = mapper.readValue(message, LogoutRequest.class);
-            if (logout.command.equals("LOGOUT")){
-                if(UserCountController.isUser(clientSocket)){
-                    UserCountController.deleteUser(clientSocket);
-
-                    Platform.runLater(() -> ServerAppController.getInstance().removeUserFromUserCount());
-                }
-            }
-            LogService.log("LOGIN", "user " + logout.user + " has logged in");
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         } finally {
@@ -184,6 +176,7 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
 
                 UserCountController.deleteUser(clientSocket);
+                Platform.runLater(() -> ServerAppController.getInstance().removeUserFromUserCount());
             } catch (IOException e) {
                 System.err.println("Closing client error: " + e.getMessage());
             }

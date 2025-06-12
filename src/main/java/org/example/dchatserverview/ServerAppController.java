@@ -55,6 +55,7 @@ public class ServerAppController {
             if (count > 0) {
                 usersCountLabel.setText(String.valueOf(count - 1));
             }
+
         });
     }
 
