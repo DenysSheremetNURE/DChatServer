@@ -46,6 +46,10 @@ public class ClientHandler implements Runnable {
                     case "REGISTER" -> handleRegister(message, mapper);
                     case "LOGOUT" -> handleLogout(message, mapper);
                     case "DISCONNECT" -> handleDisconnect(message, mapper);
+                    case "GET_MESSAGES" -> {
+                        String responseJson = MessageManager.handleGetMessages(message, mapper);
+                        sendMessage(responseJson);
+                    }
                 }
 
                 //TODO handle the message + add to users online
