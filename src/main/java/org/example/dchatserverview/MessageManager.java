@@ -1,6 +1,7 @@
 package org.example.dchatserverview;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.dchatserverview.JSON.GetMessageRequest;
+import org.example.dchatserverview.JSON.SendMessageRequest;
 import org.example.dchatserverview.UIClasses.Message;
 
 import java.io.IOException;
@@ -62,5 +63,15 @@ public class MessageManager {
         }
 
 
+    }
+
+    //TODO
+    public static void handleSendMessage(String json, ObjectMapper mapper){
+        try{
+            SendMessageRequest request = mapper.readValue(json, SendMessageRequest.class);
+            Message message = request.message;
+            String recipient = request.recipient;
+
+        }
     }
 }

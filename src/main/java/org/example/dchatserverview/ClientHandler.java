@@ -50,6 +50,7 @@ public class ClientHandler implements Runnable {
                         String responseJson = MessageManager.handleGetMessages(message, mapper);
                         sendMessage(responseJson);
                     }
+                    case "SEND_MESSAGE" -> MessageManager.handleSendMessage(message, mapper);
                 }
 
                 //TODO handle the message + add to users online
