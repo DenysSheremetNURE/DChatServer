@@ -95,7 +95,7 @@ public class ClientHandler implements Runnable {
             if(isOK){
                 response.status = "OK";
                 response.message = "Login successful";
-                UserCountController.addUsername(clientSocket, login.username);
+                UserCountController.addUsername(clientSocket, login.username, this);
                 LogService.log("LOGIN", "user " + login.username + " has logged in");
 
                 Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
@@ -143,7 +143,7 @@ public class ClientHandler implements Runnable {
                 response.status = "OK";
                 response.message = "Successfully registered user " + register.username;
 
-                UserCountController.addUsername(clientSocket, register.username);
+                UserCountController.addUsername(clientSocket, register.username, this);
 
                 Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
 
