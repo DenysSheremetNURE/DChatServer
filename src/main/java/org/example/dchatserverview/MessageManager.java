@@ -69,7 +69,6 @@ public class MessageManager {
 
     }
 
-    //TODO
     public static void handleSendMessage(String json, ObjectMapper mapper){
         SendMessageRequest request = null;
         Message message = null;

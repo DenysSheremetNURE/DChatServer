@@ -23,7 +23,7 @@ public class LogDB {
 
     public static List<String> loadRecentLogs(int limit) {
         List<String> logs = new ArrayList<>();
-        String sql = "SELECT timestamp, type, message FROM logs ORDER BY id ASC LIMIT ?";
+        String sql = "SELECT timestamp, type, message FROM logs ORDER BY id DESC LIMIT ?";
 
         try (Connection conn = LogDBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
