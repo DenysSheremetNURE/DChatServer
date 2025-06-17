@@ -1,8 +1,9 @@
 package org.example.dchatserverview;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.dchatserverview.JSON.GetMessageRequest;
-import org.example.dchatserverview.JSON.SendMessageRequest;
+import org.example.dchatserverview.JSON.*;
 import org.example.dchatserverview.SessionData.UserCountController;
+import org.example.dchatserverview.UIClasses.Chat;
 import org.example.dchatserverview.UIClasses.Message;
 
 import java.io.IOException;
@@ -51,7 +52,8 @@ public class MessageManager {
                     messages.add(msg);
                 }
 
-                return mapper.writeValueAsString(messages);
+                GetMessageResponse response = new GetMessageResponse(messages);
+                return mapper.writeValueAsString(response);
 
 
             } catch (SQLException e) {
@@ -78,35 +80,42 @@ public class MessageManager {
             message = request.message;
             recipient = request.recipient;
 
-            Socket recipientSocket = UserCountController.getSocket(recipient);
+            //
+            try(Connection conn = MainDBConnection.getConnection()){
+                String senderUsername = message.getSender();
+                long senderId = getUserId(conn, senderUsername);
+                long recipientId = getUserId(conn, recipient);
 
-            String messageJson = mapper.writeValueAsString(message);
+                long chatId = getOrCreateChatId(conn, senderId, recipientId);
 
-            if (recipientSocket != null && !recipientSocket.isClosed()){
-                ClientHandler handler = UserCountController.getHandler(recipient);
-                if(handler != null){
-                    handler.sendMessage(messageJson);
+                long messageId = insertMessage(conn, chatId, senderId, message.getContent());
+
+                message.setId(messageId);
+                message.setChatId(chatId);
+
+                String messageJson = mapper.writeValueAsString(new SendMessageResponse(message));
+
+                Socket recipientSocket = UserCountController.getSocket(recipient);
+
+                if (recipientSocket != null && !recipientSocket.isClosed()){
+                    ClientHandler handler = UserCountController.getHandler(recipient);
+                    if(handler != null){
+                        handler.sendMessage(messageJson);
+                    }
                 }
-            }
 
+                ClientHandler senderHandler = UserCountController.getHandler(message.getSender());
+                if (senderHandler != null) {
+                    senderHandler.sendMessage(messageJson);
+                }
+
+
+                LogService.log("MESSAGE", "user " + senderUsername + " sent a message to user " + recipient);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         } catch (IOException e){
             e.printStackTrace();
-        } finally{
-            if (request != null && message != null && recipient != null){
-                try (Connection conn = MainDBConnection.getConnection()) {
-                    String senderUsername = message.getSender();
-                    long senderId = getUserId(conn, senderUsername);
-                    long recipientId = getUserId(conn, recipient);
-                    long chatId = getOrCreateChatId(conn, senderId, recipientId);
-
-                    insertMessage(conn, chatId, senderId, message.getContent());
-
-                    LogService.log("MESSAGE", "user " + senderUsername + " sent a message to user " + recipient);
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
@@ -170,4 +179,142 @@ public class MessageManager {
             throw new SQLException("Failed to insert message");
         }
     }
+
+    private static List<Chat> getUserChats(Connection conn, String username) throws SQLException {
+        String sql = """
+        SELECT cu.chat_id, u.id AS user_id, u.username
+        FROM dchatdata.chat_users cu
+        JOIN dchatdata.chat_users cu2 ON cu.chat_id = cu2.chat_id
+        JOIN dchatdata.users u ON cu.user_id = u.id
+        WHERE cu2.user_id = (SELECT id FROM dchatdata.users WHERE username = ?)
+        AND u.username <> ?
+    """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+            stmt.setString(2, username);
+            ResultSet rs = stmt.executeQuery();
+
+            List<Chat> chats = new ArrayList<>();
+            while (rs.next()) {
+                chats.add(new Chat(
+                        rs.getLong("chat_id"),
+                        rs.getLong("user_id"),
+                        rs.getString("username")
+                ));
+            }
+            return chats;
+        }
+    }
+
+
+    public static void handleNewChat(String message, ObjectMapper mapper, ClientHandler handler) {
+        try{
+            NewChatRequest request = mapper.readValue(message, NewChatRequest.class);
+
+            String sender = request.sender;
+            String recipient = request.recipient;
+
+            try(Connection conn = MainDBConnection.getConnection()){
+                long senderId = getUserId(conn, sender);
+
+                long recipientId;
+                try {
+                    recipientId = getUserId(conn, recipient);
+                } catch (SQLException e){
+                    handler.sendMessage(mapper.writeValueAsString(new BaseResponse("NEW_CHAT_ERR")));
+                    return;
+                }
+
+                Long existingChatId = findChatId(conn, senderId, recipientId); // Long instead of long to compare to null
+                if(existingChatId != null){
+                    handler.sendMessage(mapper.writeValueAsString(new BaseResponse("NEW_CHAT_ERR")));
+                    return;
+                }
+
+                long chatId = createChat(conn);
+                linkUserToChat(conn, chatId, senderId);
+                linkUserToChat(conn, chatId, recipientId);
+
+                NewChatResponse response = new NewChatResponse(sender, recipient, recipientId, chatId);
+                response.type = "NEW_CHAT_OK";
+
+                handler.sendMessage(mapper.writeValueAsString(response));
+
+                ClientHandler recipientHandler = UserCountController.getHandler(recipient);
+                if (recipientHandler != null) {
+                    NewChatResponse responseForRecipient = new NewChatResponse(recipient, sender, senderId, chatId);
+                    responseForRecipient.type = "NEW_CHAT_OK";
+                    recipientHandler.sendMessage(mapper.writeValueAsString(responseForRecipient));
+                }
+
+                //
+                List<Chat> senderChats = getUserChats(conn, sender);
+                handler.sendMessage(mapper.writeValueAsString(new GetChatsResponse(senderChats)));
+
+                if (recipientHandler != null) {
+                    List<Chat> recipientChats = getUserChats(conn, recipient);
+                    recipientHandler.sendMessage(mapper.writeValueAsString(new GetChatsResponse(recipientChats)));
+                }
+                //
+
+                LogService.log("CHAT", "User " + sender + " created chat with " + recipient);
+            } catch (SQLException e){
+                e.printStackTrace();
+                handler.sendMessage(mapper.writeValueAsString(new BaseResponse("NEW_CHAT_ERR")));
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            try{
+                handler.sendMessage(mapper.writeValueAsString(new BaseResponse("NEW_CHAT_ERR")));
+            } catch (JsonProcessingException ex){
+                ex.printStackTrace();
+            }
+
+        }
+    }
+
+    public static String handleGetChats(String message, ObjectMapper mapper){
+        try {
+            GetChatsRequest request = mapper.readValue(message, GetChatsRequest.class);
+            String username = request.username;
+
+            try (Connection conn = MainDBConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "SELECT cu.chat_id, u.id AS user_id, u.username " +
+                                 "FROM dchatdata.chat_users cu " +
+                                 "JOIN dchatdata.chat_users cu2 ON cu.chat_id = cu2.chat_id " +
+                                 "JOIN dchatdata.users u ON cu.user_id = u.id " +
+                                 "WHERE cu2.user_id = (SELECT id FROM dchatdata.users WHERE username = ?) " +
+                                 "AND u.username <> ?"
+                 )) {
+
+                stmt.setString(1, username);
+                stmt.setString(2, username);
+                ResultSet rs = stmt.executeQuery();
+
+                List<Chat> chats = new ArrayList<>();
+
+                while (rs.next()) {
+                    long chatId = rs.getLong("chat_id");
+                    long userId = rs.getLong("user_id");
+                    String user = rs.getString("username");
+
+                    chats.add(new Chat(chatId, userId, user));
+                }
+
+                return mapper.writeValueAsString(new GetChatsResponse(chats));
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "[]";
+    }
+
 }

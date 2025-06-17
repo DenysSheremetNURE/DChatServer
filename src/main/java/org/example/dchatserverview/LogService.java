@@ -23,6 +23,7 @@ public class LogService {
             case "ERROR", "LOGOUT" -> color = "red";
             case "WARN", "DISCONNECT" -> color = "orange";
             case "SERVER" -> color = "grey";
+            case "CHAT" -> color = "blue";
             default -> color = "green";
         }
 

@@ -1,7 +1,10 @@
 package org.example.dchatserverview;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import javafx.application.Platform;
 import org.example.dchatserverview.JSON.*;
 import org.example.dchatserverview.SessionData.UserCountController;
@@ -34,6 +37,8 @@ public class ClientHandler implements Runnable {
     public void run() {
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         try{
             String message;
@@ -50,25 +55,27 @@ public class ClientHandler implements Runnable {
                         String responseJson = MessageManager.handleGetMessages(message, mapper);
                         sendMessage(responseJson);
                     }
+                    case "GET_CHATS" -> {
+                        String responseJson = MessageManager.handleGetChats(message, mapper);
+                        sendMessage(responseJson);
+                    }
                     case "SEND_MESSAGE" -> MessageManager.handleSendMessage(message, mapper);
+                    case "NEW_CHAT" -> MessageManager.handleNewChat(message, mapper, this);
                 }
 
-                //TODO handle the message + add to users online
+
             }
         } catch (IOException e) {
             System.out.println("Socket has been closed.");
         } finally {
             try{
-                in.close();
-                out.close();
-                clientSocket.close();
-
-                //TODO del from users online
-
+                if (in != null) in.close();
+                if (out != null) out.close();
+                if (clientSocket != null) clientSocket.close();
             } catch (IOException e) {
                 System.err.println("Closing client error: " + e.getMessage());
-                throw new RuntimeException(e);
             }
+            UserCountController.deleteUser(clientSocket);
         }
     }
 
@@ -208,4 +215,5 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+
 }
