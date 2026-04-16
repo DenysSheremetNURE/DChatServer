@@ -5,7 +5,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class LogDBConnection {
-    private static final String URL = "jdbc:postgresql://localhost:5432/dchat?currentSchema=dchatlogs";
+    static boolean isDocker = "true".equals(System.getenv("IS_DOCKER"));
+
+    private static final String URL = isDocker ? "jdbc:postgresql://chat-db:5432/dchat?currentSchema=dchatlogs" : "jdbc:postgresql://localhost:5432/dchat?currentSchema=dchatlogs";
     private static final String USER = "postgres";
     private static final String PASSWORD = "Yjdsqltybc29";
 

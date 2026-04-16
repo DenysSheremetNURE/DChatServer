@@ -105,7 +105,9 @@ public class ClientHandler implements Runnable {
                 UserCountController.addUsername(clientSocket, login.username, this);
                 LogService.log("LOGIN", "user " + login.username + " has logged in");
 
-                Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
+                if (!"true".equals(System.getenv("IS_DOCKER"))){
+                    Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
+                }
 
             } else {
                 response.status = "ERROR";
@@ -152,9 +154,11 @@ public class ClientHandler implements Runnable {
 
                 UserCountController.addUsername(clientSocket, register.username, this);
 
-                Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
-
                 LogService.log("REGISTER", "user " + register.username + " has registered");
+
+                if (!"true".equals(System.getenv("IS_DOCKER"))){
+                    Platform.runLater(() -> ServerAppController.getInstance().addUserToUserCount());
+                }
             }
 
             String json = mapper.writeValueAsString(response);
@@ -188,7 +192,10 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
 
                 UserCountController.deleteUser(clientSocket);
-                Platform.runLater(() -> ServerAppController.getInstance().removeUserFromUserCount());
+                if (!"true".equals(System.getenv("IS_DOCKER"))){
+                    Platform.runLater(() -> ServerAppController.getInstance().removeUserFromUserCount());
+                }
+
             } catch (IOException e) {
                 System.err.println("Closing client error: " + e.getMessage());
             }

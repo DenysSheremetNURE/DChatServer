@@ -43,20 +43,24 @@ public class ServerAppController {
     }
 
     public void addUserToUserCount() {
-        Platform.runLater(() -> {
-            int count = Integer.parseInt(usersCountLabel.getText());
-            usersCountLabel.setText(String.valueOf(count + 1));
-        });
+        if (!"true".equals(System.getenv("IS_DOCKER"))){
+            Platform.runLater(() -> {
+                int count = Integer.parseInt(usersCountLabel.getText());
+                usersCountLabel.setText(String.valueOf(count + 1));
+            });
+        }
     }
 
     public void removeUserFromUserCount(){
-        Platform.runLater(() -> {
-            int count = Integer.parseInt(usersCountLabel.getText());
-            if (count > 0) {
-                usersCountLabel.setText(String.valueOf(count - 1));
-            }
+        if (!"true".equals(System.getenv("IS_DOCKER"))) {
+            Platform.runLater(() -> {
+                int count = Integer.parseInt(usersCountLabel.getText());
+                if (count > 0) {
+                    usersCountLabel.setText(String.valueOf(count - 1));
+                }
 
-        });
+            });
+        }
     }
 
 }

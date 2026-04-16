@@ -43,6 +43,25 @@ public class ServerApp extends Application {
     }
 
     public static void main(String[] args) {
-        launch();
+        String isDocker = System.getenv("IS_DOCKER");
+
+        if ("true".equals(isDocker)) {
+            System.out.println("=========================================");
+            System.out.println("Starting DChat Server in HEADLESS mode...");
+            System.out.println("Docker environment detected.");
+            System.out.println("=========================================");
+
+            final int port = 8080;
+            try {
+                ServerLogic headlessServer = new ServerLogic(port);
+                headlessServer.start();
+            } catch (Exception e) {
+                System.err.println("Headless server start error: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("Starting DChat Server with GUI...");
+            launch();
+        }
     }
 }

@@ -33,7 +33,7 @@ public class ServerLogic {
                     Thread thread = new Thread(handler);
                     thread.start();
                 } catch (SocketException e){
-                    System.out.println("Server socket is close. Shutting down...");
+                    System.out.println("Server socket is closed. Shutting down...");
                     break;
                 }
 
